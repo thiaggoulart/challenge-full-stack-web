@@ -1,3 +1,48 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-debug.log*
+
+# Compiled source
+dist/
+build/
+.cache/
+.vite/
+*.tsbuildinfo
+
+# Vue
+*.local
+.env.local
+.env.*.local
+
+# MacOS
+.DS_Store
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs
+*.log
+
+# Sequelize CLI
+src/migrations/*.js.map
+src/seeders/*.js.map
+
+# Outros
+tmp/
+
 # Logs
 logs
 *.log
