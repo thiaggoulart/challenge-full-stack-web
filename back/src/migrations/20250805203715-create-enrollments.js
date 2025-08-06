@@ -8,10 +8,10 @@ module.exports = {
         primaryKey: true,
         allowNull: false,
       },
-      studentId: {
-        type: Sequelize.INTEGER,
+      studentRa: {
+        type: Sequelize.STRING,
         allowNull: false,
-        references: { model: 'students', key: 'id' },
+        references: { model: 'students', key: 'ra' },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
@@ -29,8 +29,12 @@ module.exports = {
       },
     });
   },
-
-  async down(queryInterface, Sequelize) {
+  uniqueKeys: {
+    unique_student_course: {
+      fields: ["studentRa", "course"],
+    },
+  },
+  async down(queryInterface) {
     await queryInterface.dropTable('enrollments');
   },
 };

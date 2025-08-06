@@ -1,27 +1,48 @@
-import { DataTypes, Model } from "sequelize";
+import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 import { Student } from "./Student";
 
-interface EnrollmentAttributes {
-  id?: number;
-  course: string;
-  studentId: number;
-}
-
-export class Enrollment extends Model<EnrollmentAttributes> implements EnrollmentAttributes {
+export class Enrollment extends Model {
   public id!: number;
+  public studentRa!: string;
   public course!: string;
-  public studentId!: number;
 }
 
 Enrollment.init(
   {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    course: { type: DataTypes.STRING, allowNull: false, defaultValue: "Ciencia da computacao" },
-    studentId: { type: DataTypes.INTEGER, allowNull: false }
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    studentRa: {
+      type: DataTypes.STRING(12),
+      allowNull: false,
+      references: {
+        model: Student,
+        key: "ra",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+    course: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
-  { sequelize, tableName: "enrollments" }
+  {
+    sequelize,
+    modelName: "Enrollment",
+    tableName: "enrollments",
+    timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["studentRa", "course"],
+      },
+    ],
+  }
 );
 
-Student.hasMany(Enrollment, { foreignKey: "studentId" });
-Enrollment.belongsTo(Student, { foreignKey: "studentId" });
+Student.hasMany(Enrollment, { foreignKey: "studentRa", sourceKey: "ra" });
+Enrollment.belongsTo(Student, { foreignKey: "studentRa", targetKey: "ra" });

@@ -1,29 +1,41 @@
-import { DataTypes, Model } from "sequelize";
+import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
-interface StudentAttributes {
-  id?: number;
-  name: string;
-  email: string;
-  ra: string;
-  cpf: string;
-}
-
-export class Student extends Model<StudentAttributes> implements StudentAttributes {
-  public id!: number;
+export class Student extends Model {
+  public ra!: string;
   public name!: string;
   public email!: string;
-  public ra!: string;
   public cpf!: string;
 }
 
 Student.init(
   {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false, unique: true },
-    ra: { type: DataTypes.STRING, allowNull: false, unique: true },
-    cpf: { type: DataTypes.STRING, allowNull: false, unique: true }
+    ra: {
+      type: DataTypes.STRING(12),
+      primaryKey: true,
+      allowNull: false,
+      unique: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: { isEmail: true },
+    },
+    cpf: {
+      type: DataTypes.STRING(11),
+      allowNull: false,
+      unique: true,
+    },
   },
-  { sequelize, tableName: "students" }
+  {
+    sequelize,
+    modelName: "Student",
+    tableName: "students",
+    timestamps: true,
+  }
 );

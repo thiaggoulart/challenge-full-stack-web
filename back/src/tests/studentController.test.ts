@@ -1,6 +1,14 @@
-import { createStudent, getAllStudents, getStudentById, updateStudent, deleteStudent } from "../controllers/studentController";
+import {
+    createStudent,
+    updateStudent,
+    getAllStudents,
+    deleteStudent,
+    getStudentByRa,
+    searchStudents
+} from "../controllers/studentController";
 import { Student } from "../models/Student";
 import { Request, Response } from "express";
+import { validStudentData, invalidStudentData, partialStudentUpdate } from "./fixtures/studentFixture";
 
 const mockResponse = () => {
     const res = {} as Response;
@@ -10,151 +18,326 @@ const mockResponse = () => {
 };
 
 describe("Student Controller", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
+    beforeEach(() => jest.clearAllMocks());
 
-    it("Deve criar aluno válido", async () => {
-        const req = { body: { name: "Thiago", email: "thiago@test.com", ra: "ABC123", cpf: "12345678901" } } as Request;
-        const res = mockResponse();
+    describe("createStudent", () => {
+        it("should create a valid student", async () => {
+            const req = { body: validStudentData } as Request;
+            const res = mockResponse();
 
-        jest.spyOn(Student, "create").mockResolvedValue({ id: 1, ...req.body } as any);
+            jest.spyOn(Student, "create").mockResolvedValue({ id: 1, ...validStudentData } as any);
 
-        await createStudent(req, res);
+            await createStudent(req, res);
 
-        expect(res.status).toHaveBeenCalledWith(201);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
-    });
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+        });
 
-    it("Deve falhar ao criar aluno inválido (erro do Zod)", async () => {
-        const req = { body: { cpf: "123" } } as any; // faltando campos obrigatórios
-        const res = mockResponse();
+        it("should return Zod validation errors for invalid data", async () => {
+            const req = { body: invalidStudentData } as Request;
+            const res = mockResponse();
 
-        await createStudent(req, res);
+            await createStudent(req, res);
 
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({
-            error: expect.arrayContaining(["CPF deve conter exatamente 11 dígitos numéricos."])
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                error: expect.arrayContaining([
+                    expect.stringContaining("RA deve ter entre 6 e 12 caracteres"),
+                    expect.stringContaining("CPF deve conter exatamente 11 dígitos numéricos")
+                ])
+            });
+        });
+
+        it("should return generic error for Sequelize failure", async () => {
+            const req = { body: validStudentData } as Request;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "create").mockRejectedValue(new Error("DB error"));
+
+            await createStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro inesperado ao criar aluno" });
         });
     });
 
-    it("Deve listar alunos", async () => {
-        const req = {} as Request;
-        const res = mockResponse();
-        jest.spyOn(Student, "findAll").mockResolvedValue([{ id: 1, name: "Teste" }] as any);
+    describe("updateStudent", () => {
+        it("should update student successfully", async () => {
+            const req = { params: { ra: validStudentData.ra }, body: partialStudentUpdate } as any;
+            const res = mockResponse();
 
-        await getAllStudents(req, res);
+            const mockStudent = {
+                ...validStudentData,
+                update: jest.fn().mockImplementation(function (this: any, data) {
+                    Object.assign(this, data);
+                    return Promise.resolve(this);
+                }),
+            };
 
-        expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ id: 1 })]));
-    });
+            jest.spyOn(Student, "findOne").mockResolvedValue(mockStudent as any);
 
-    it("Deve buscar aluno por ID", async () => {
-        const req = { params: { id: "1" } } as unknown as Request;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockResolvedValue({ id: 1 } as any);
+            await updateStudent(req, res);
 
-        await getStudentById(req, res);
+            expect(mockStudent.update).toHaveBeenCalledWith(partialStudentUpdate);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining(partialStudentUpdate));
+        });
 
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
-    });
+        it("should return 404 if student not found for update", async () => {
+            const req = { params: { ra: "NOTFOUND" }, body: partialStudentUpdate } as any;
+            const res = mockResponse();
 
-    it("Deve retornar erro ao buscar aluno inexistente", async () => {
-        const req = { params: { id: "99" } } as unknown as Request;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockResolvedValue(null);
+            jest.spyOn(Student, "findOne").mockResolvedValue(null);
 
-        await getStudentById(req, res);
+            await updateStudent(req, res);
 
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
-    });
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
+        });
 
-    it("Deve atualizar aluno válido", async () => {
-        const req = { params: { id: "1" }, body: { name: "Novo Nome", email: "novo@test.com" } } as any;
-        const res = mockResponse();
+        it("should return Zod validation errors when updating with invalid data", async () => {
+            const req = { params: { ra: validStudentData.ra }, body: invalidStudentData } as any;
+            const res = mockResponse();
 
-        jest.spyOn(Student, "findByPk").mockResolvedValue({
-            id: 1,
-            update: jest.fn().mockImplementation(function (this: any, data: any) {
-                Object.assign(this, data);
-                return this;
-            })
-        } as any);
+            jest.spyOn(Student, "findOne").mockResolvedValue({ update: jest.fn() } as any);
 
-        await updateStudent(req, res);
+            await updateStudent(req, res);
 
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            id: 1,
-            name: "Novo Nome",
-            email: "novo@test.com"
-        }));
-    });
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                error: expect.arrayContaining([
+                    expect.stringContaining("Formato de e-mail inválido"),
+                    expect.stringContaining("CPF deve conter exatamente 11 dígitos numéricos")
+                ])
+            });
+        });
 
-    it("Deve falhar ao atualizar aluno inexistente", async () => {
-        const req = { params: { id: "99" }, body: { name: "Novo" } } as any;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockResolvedValue(null);
+        it("should return generic error for Sequelize failure on update", async () => {
+            const req = { params: { ra: validStudentData.ra }, body: partialStudentUpdate } as any;
+            const res = mockResponse();
 
-        await updateStudent(req, res);
+            jest.spyOn(Student, "findOne").mockImplementation(() => { throw new Error("DB error"); });
 
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
-    });
+            await updateStudent(req, res);
 
-    it("Deve falhar ao atualizar aluno com dados inválidos (erro do Zod)", async () => {
-        const req = { params: { id: "1" }, body: { email: "invalido" } } as any;
-        const res = mockResponse();
-
-        jest.spyOn(Student, "findByPk").mockResolvedValue({ update: jest.fn() } as any);
-
-        await updateStudent(req, res);
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({
-            error: expect.arrayContaining(["Formato de e-mail inválido."])
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro inesperado ao atualizar aluno" });
         });
     });
 
-    it("Deve deletar aluno existente", async () => {
-        const req = { params: { id: "1" } } as any;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockResolvedValue({ id: 1, destroy: jest.fn() } as any);
+    describe("getAllStudents", () => {
+        it("should list all students", async () => {
+            const req = {} as Request;
+            const res = mockResponse();
 
-        await deleteStudent(req, res);
+            jest.spyOn(Student, "findAll").mockResolvedValue([validStudentData] as any);
 
-        expect(res.json).toHaveBeenCalledWith({ message: "Aluno deletado com sucesso" });
+            await getAllStudents(req, res);
+
+            expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining(validStudentData)]));
+        });
+
+        it("should return error when Sequelize fails", async () => {
+            const req = {} as Request;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findAll").mockRejectedValue(new Error("DB error"));
+
+            await getAllStudents(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro ao listar alunos" });
+        });
     });
 
-    it("Deve falhar ao deletar aluno inexistente", async () => {
-        const req = { params: { id: "99" } } as any;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockResolvedValue(null);
+    describe("deleteStudent", () => {
+        it("should delete an existing student", async () => {
+            const req = { params: { ra: validStudentData.ra } } as any;
+            const res = mockResponse();
 
-        await deleteStudent(req, res);
+            jest.spyOn(Student, "findOne").mockResolvedValue({ ...validStudentData, destroy: jest.fn() } as any);
 
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
+            await deleteStudent(req, res);
+
+            expect(res.json).toHaveBeenCalledWith({ message: "Aluno deletado com sucesso" });
+        });
+
+        it("should return 404 if student not found for delete", async () => {
+            const req = { params: { ra: "NOTFOUND" } } as any;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findOne").mockResolvedValue(null);
+
+            await deleteStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
+        });
+
+        it("should return generic error for Sequelize failure on delete", async () => {
+            const req = { params: { ra: validStudentData.ra } } as any;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findOne").mockImplementation(() => { throw new Error("DB error"); });
+
+            await deleteStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro inesperado ao deletar aluno" });
+        });
     });
 
-    it("Deve capturar erro no delete (exceção genérica)", async () => {
-        const req = { params: { id: "1" } } as any;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockImplementation(() => { throw new Error("DB error"); });
+    describe("getStudentByRa", () => {
+        it("should return a student by RA", async () => {
+            const req = { params: { ra: validStudentData.ra } } as any;
+            const res = mockResponse();
 
-        await deleteStudent(req, res);
+            jest.spyOn(Student, "findOne").mockResolvedValue(validStudentData as any);
 
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ error: "DB error" });
+            await getStudentByRa(req, res);
+
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining(validStudentData));
+        });
+
+        it("should return 404 if student not found", async () => {
+            const req = { params: { ra: "NOTFOUND" } } as any;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findOne").mockResolvedValue(null);
+
+            await getStudentByRa(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: "Aluno não encontrado" });
+        });
+
+        it("should return generic error for Sequelize failure on getStudentByRa", async () => {
+            const req = { params: { ra: validStudentData.ra } } as any;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findOne").mockImplementation(() => { throw new Error("DB error"); });
+
+            await getStudentByRa(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro inesperado ao buscar aluno" });
+        });
     });
 
-    it("Deve capturar erro no getStudentById (exceção genérica)", async () => {
-        const req = { params: { id: "1" } } as any;
-        const res = mockResponse();
-        jest.spyOn(Student, "findByPk").mockImplementation(() => { throw new Error("Falha inesperada"); });
+    describe("searchStudents", () => {
+        it("should return students matching query", async () => {
+            const req = { query: { query: "João" } } as any;
+            const res = mockResponse();
 
-        await getStudentById(req, res);
+            jest.spyOn(Student, "findAll").mockResolvedValue([validStudentData] as any);
 
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ error: "Falha inesperada" });
+            await searchStudents(req, res);
+
+            expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining(validStudentData)]));
+        });
+
+        it("should return 400 if no query parameter provided", async () => {
+            const req = { query: {} } as any;
+            const res = mockResponse();
+
+            await searchStudents(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Parâmetro de busca é obrigatório" });
+        });
+
+        it("should return generic error for Sequelize failure on search", async () => {
+            const req = { query: { query: "João" } } as any;
+            const res = mockResponse();
+
+            jest.spyOn(Student, "findAll").mockImplementation(() => { throw new Error("DB error"); });
+
+            await searchStudents(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ error: "Erro inesperado na busca de alunos" });
+        });
+    });
+
+    describe("Unique Constraint", () => {
+        it("should return 400 if email is duplicated", async () => {
+            const req = {
+                body: {
+                    name: "Duplicate User",
+                    email: "duplicate@example.com",
+                    ra: "RA123456",
+                    cpf: "12345678901",
+                },
+            } as Request;
+
+            const res = mockResponse();
+
+            const error = {
+                name: "SequelizeUniqueConstraintError",
+                errors: [{ path: "email" }],
+            };
+
+            jest.spyOn(Student, "create").mockRejectedValue(error as any);
+
+            await createStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                error: "Este e-mail já está cadastrado",
+            });
+        });
+
+        it("should return 400 if RA is duplicated", async () => {
+            const req = {
+                body: {
+                    name: "Duplicate RA",
+                    email: "ra@example.com",
+                    ra: "RA654321",
+                    cpf: "12345678902",
+                },
+            } as Request;
+
+            const res = mockResponse();
+
+            const error = {
+                name: "SequelizeUniqueConstraintError",
+                errors: [{ path: "ra" }],
+            };
+
+            jest.spyOn(Student, "create").mockRejectedValue(error as any);
+
+            await createStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                error: "Este RA já está cadastrado",
+            });
+        });
+
+        it("should return 400 if CPF is duplicated", async () => {
+            const req = {
+                body: {
+                    name: "Duplicate CPF",
+                    email: "cpf@example.com",
+                    ra: "RA789123",
+                    cpf: "12345678903",
+                },
+            } as Request;
+
+            const res = mockResponse();
+
+            const error = {
+                name: "SequelizeUniqueConstraintError",
+                errors: [{ path: "cpf" }],
+            };
+
+            jest.spyOn(Student, "create").mockRejectedValue(error as any);
+
+            await createStudent(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                error: "Este CPF já está cadastrado",
+            });
+        });
     });
 });

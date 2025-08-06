@@ -1,9 +1,8 @@
 'use strict';
 
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('students', null, {});
-    await queryInterface.sequelize.query('ALTER SEQUENCE students_id_seq RESTART WITH 1;');
 
     await queryInterface.bulkInsert('students', [
       { name: 'Thiago Goulart', email: 'thiago1@test.com', ra: 'RA1001', cpf: '12345678901', createdAt: new Date(), updatedAt: new Date() },
@@ -19,7 +18,7 @@ module.exports = {
     ], {});
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.bulkDelete('students', null, {});
   }
 };

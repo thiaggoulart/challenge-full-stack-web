@@ -1,14 +1,24 @@
 import { z } from "zod";
 
 export const enrollmentSchema = z.object({
-  studentId: z.any()
-    .refine((val) => typeof val === "number" && val > 0, {
-      message: "O ID do aluno é obrigatório e deve ser um número positivo."
+  studentRa: z.union([
+    z.string()
+      .min(6, { message: "O RA do aluno deve ter pelo menos 6 caracteres" })
+      .max(12, { message: "O RA do aluno deve ter no máximo 12 caracteres" })
+      .regex(/^[a-zA-Z0-9]+$/, {
+        message: "O RA do aluno deve conter apenas letras e números",
+      }),
+    z.undefined().refine(() => false, {
+      message: "O RA do aluno é obrigatório",
     }),
+  ]),
+
   course: z.string()
-    .nonempty("O curso é obrigatório.")
-    .min(3, { message: "O nome do curso deve ter pelo menos 3 caracteres." })
-    .default("Programação Web")
+    .min(3, { message: "O nome do curso deve ter pelo menos 3 caracteres" })
+    .optional()
+    .refine((val) => val !== undefined && val.trim().length > 0, {
+      message: "O curso é obrigatório",
+    }),
 });
 
 export type EnrollmentInput = z.infer<typeof enrollmentSchema>;
