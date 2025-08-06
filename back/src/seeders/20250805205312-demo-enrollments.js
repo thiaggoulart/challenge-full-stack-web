@@ -20,7 +20,17 @@ module.exports = {
       'Desenvolvimento Back-End',
       'Segurança da Informação',
       'Big Data e IoT',
-      'Gestão de Projetos'
+      'Gestão de Projetos',
+      'Inteligência Artificial',
+      'Computação em Nuvem',
+      'DevOps e Integração Contínua',
+      'Testes de Software',
+      'Sistemas Distribuídos',
+      'Arquitetura de Software',
+      'Mobile Development',
+      'Design de Interfaces',
+      'Ciência de Dados',
+      'Sistemas Embarcados'
     ];
 
     const enrollments = students.map((student, index) => ({

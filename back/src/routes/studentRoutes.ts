@@ -10,11 +10,6 @@ import {
 
 const router = Router();
 
-router.use((req, _res, next) => {
-  console.log("BODY RECEBIDO:", req.body);
-  next();
-});
-
 router.post("/", createStudent);
 router.get("/", getAllStudents);
 router.get("/search", searchStudents);
