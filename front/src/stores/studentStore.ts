@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { getStudents, deleteStudentByRa } from '@/services/studentService';
+import { getStudents, deleteStudentByRa, createStudent } from '@/services/studentService';
 
 export interface Student {
     name: string;
@@ -53,4 +53,8 @@ export const studentStore = reactive({
         this.selectedStudentToDelete = student;
         this.deleteDialog = true;
     },
+
+    async createStudent(student: { name: string; email: string; ra: string; cpf: string }) {
+        await createStudent(student)
+    }
 });

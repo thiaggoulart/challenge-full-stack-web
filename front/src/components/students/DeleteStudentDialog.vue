@@ -7,7 +7,7 @@
             </v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn variant="outlined" color="secondary" @click="cancel">Cancelar</v-btn>
+                <v-btn variant="outlined" color="grey-darken-1" @click="cancel">Cancelar</v-btn>
                 <v-btn color="error" @click="confirm">Excluir</v-btn>
             </v-card-actions>
         </v-card>
@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import type { Student } from "../../stores/studentStore.ts";
-import { defineProps, defineEmits, computed } from "vue";
+import { computed } from "vue";
 
 const props = defineProps<{
     deleteDialog: boolean;

@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import StudentList from '../views/StudentList.vue'
-// import StudentForm from '../views/StudentForm.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import StudentList from '../views/StudentList.vue';
+import StudentCreate from '../views/StudentCreate.vue'
 
 const routes = [
-  { path: '/', component: StudentList },
-  // { path: '/students/new', component: StudentForm },
-  // { path: '/students/edit/:ra', component: StudentForm, props: true }
+  { path: '/', redirect: '/students' },
+  { path: '/students', component: StudentList },
+  { path: '/students/create', component: StudentCreate }
 ]
 
 export default createRouter({

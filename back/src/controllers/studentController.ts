@@ -6,8 +6,6 @@ import { ZodError } from "zod";
 
 export const createStudent = async (req: Request, res: Response) => {
   try {
-    console.log("DADOS PARA PARSE:", req.body);
-
     const parsedData = studentSchema.parse(req.body);
     const student = await Student.create(parsedData);
     return res.status(201).json(student);
@@ -32,7 +30,7 @@ export const createStudent = async (req: Request, res: Response) => {
 
       return res.status(400).json({ error: message });
     }
-    
+
     return res.status(400).json({ error: "Erro inesperado ao criar aluno" });
   }
 };

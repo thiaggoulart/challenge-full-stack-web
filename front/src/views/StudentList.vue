@@ -8,7 +8,7 @@
                     </v-col>
                     <v-col cols="12" md="4" class="d-flex justify-end">
                         <v-btn color="primary" variant="tonal" class="font-weight-medium"
-                            prepend-icon="mdi-account-plus" to="/students/new">
+                            prepend-icon="mdi-account-plus" to="/students/create">
                             Cadastrar Aluno
                         </v-btn>
                     </v-col>
