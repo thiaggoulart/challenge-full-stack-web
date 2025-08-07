@@ -31,12 +31,12 @@ const headers: DataTableHeader[] = [
 ]
 
 onMounted(() => {
-  studentStore.fetchStudents()
+  studentStore.getStudents()
 })
 
 const onPageChange = (page: number) => {
   studentStore.tableOpts.page = page
-  studentStore.fetchStudents()
+  studentStore.getStudents()
 }
 
 function formatCpf(cpf: string): string {

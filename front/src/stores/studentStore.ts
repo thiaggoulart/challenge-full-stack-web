@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { getStudents, deleteStudentByRa, createStudent } from '@/services/studentService';
+import { getStudents, deleteStudentByRa, createStudent, getStudentByRa, updateStudent } from '@/services/studentService';
 
 export interface Student {
     name: string;
@@ -20,7 +20,7 @@ export const studentStore = reactive({
         search: '',
     },
 
-    async fetchStudents() {
+    async getStudents() {
         this.loading = true;
         try {
             const offset = (this.tableOpts.page - 1) * this.tableOpts.itemsPerPage;
@@ -43,7 +43,7 @@ export const studentStore = reactive({
         try {
             await deleteStudentByRa(studentStore.selectedStudentToDelete.ra);
             studentStore.deleteDialog = false;
-            await studentStore.fetchStudents();
+            await studentStore.getStudents();
         } catch (error) {
             console.error('Erro ao excluir aluno:', error);
         }
@@ -55,6 +55,15 @@ export const studentStore = reactive({
     },
 
     async createStudent(student: { name: string; email: string; ra: string; cpf: string }) {
-        await createStudent(student)
-    }
+        await createStudent(student);
+    },
+
+    async getStudentByRa(ra: string) {
+        const data = await getStudentByRa(ra);
+        return data;
+    },
+
+    async updateStudent(student: { name: string; email: string; ra: string; cpf: string }) {
+        await updateStudent(student.ra, student);
+    },
 });

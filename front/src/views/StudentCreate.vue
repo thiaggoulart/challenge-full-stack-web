@@ -15,7 +15,7 @@ import StudentForm from '@/components/students/StudentForm.vue';
 const router = useRouter()
 
 const onSubmit = async (data: any) => {
-    await studentStore.createStudent(data)
-    router.push('/students')
+    await studentStore.createStudent(data);
+    router.push('/students');
 }
 </script>

@@ -1,6 +1,7 @@
 <template>
     <v-form @submit.prevent="handleSubmit">
-        <v-text-field class="mb-4" v-model="form.name" label="Nome" :error-messages="errors.name" @blur="validateField('name')" />
+        <v-text-field class="mb-4" v-model="form.name" label="Nome" :error-messages="errors.name"
+            @blur="validateField('name')" />
         <v-text-field class="mb-4" v-model="form.email" label="Email" :error-messages="errors.email"
             @blur="validateField('email')" />
         <v-text-field class="mb-4" v-model="form.ra" label="RA" :error-messages="errors.ra" @blur="validateField('ra')"
@@ -10,59 +11,55 @@
 
         <v-card-actions class="justify-end">
             <v-btn variant="outlined" :to="cancelUrl" color="grey-darken-1">Cancelar</v-btn>
-            <v-btn type="submit" color="primary">{{ submitLabel }}</v-btn>
+            <v-btn type="submit" color="primary" :disabled="isUnchanged">{{ submitLabel }}</v-btn>
         </v-card-actions>
     </v-form>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch, onMounted, ref, nextTick } from 'vue';
+import { reactive, watch, onMounted, ref, nextTick, computed } from 'vue';
 import { z, ZodError } from 'zod';
 import { MaskInput } from "maska";
 
 const cpfRef = ref()
 
 const props = defineProps<{
-    modelValue?: {
-        name: string
-        email: string
-        ra: string
-        cpf: string
-    },
+    modelValue?: { name: string; email: string; ra: string; cpf: string }
+    originalData?: { name: string; email: string; ra: string; cpf: string }
     cancelUrl?: string
     submitLabel?: string
-}>()
+}>();
 
 const emit = defineEmits<{
     (e: 'submit', data: { name: string, email: string, ra: string, cpf: string }): void
-}>()
+}>();
 
 const form = reactive({
     name: '',
     email: '',
     ra: '',
     cpf: '',
-})
+});
 
 watch(() => props.modelValue, (value) => {
     if (value) {
         Object.assign(form, value)
     }
-}, { immediate: true })
+}, { immediate: true });
 
 const errors = reactive<Record<string, string[]>>({
     name: [],
     email: [],
     ra: [],
     cpf: [],
-})
+});
 
 const schema = z.object({
     name: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }).max(100, { message: "O nome pode ter no máximo 100 caracteres" }),
     email: z.string().email({ message: "Formato de e-mail inválido" }),
     ra: z.string().regex(/^RA[A-Z0-9]{4,10}$/, { message: "RA deve começar com 'RA' seguido de 4 a 10 letras ou números (totalizando 6 a 12 caracteres)" }),
     cpf: z.string().regex(/^\d{11}$/, { message: "CPF deve conter exatamente 11 dígitos numéricos" }),
-})
+});
 
 const validateField = (field: keyof typeof form) => {
     try {
@@ -115,5 +112,32 @@ onMounted(() => {
             new MaskInput(inputEl, { mask: '###.###.###-##' })
         }
     })
-})
+});
+
+const normalizeStudent = (s: { name: string; email: string; ra: string; cpf: string }) => ({
+  name: (s.name ?? '').trim(),
+  email: (s.email ?? '').trim().toLowerCase(),
+  ra: (s.ra ?? '').trim().toUpperCase(),
+  cpf: (s.cpf ?? '').replace(/\D/g, ''),
+});
+
+const currentNormalized = computed(() =>
+  normalizeStudent({
+    name: form.name,
+    email: form.email,
+    ra: form.ra,
+    cpf: form.cpf,
+  })
+);
+
+const originalNormalized = computed(() =>
+  props.originalData ? normalizeStudent(props.originalData) : null
+);
+
+const isUnchanged = computed(() => {
+  if (!originalNormalized.value) return false
+  const a = currentNormalized.value;
+  const b = originalNormalized.value;
+  return a.name === b.name && a.email === b.email && a.ra === b.ra && a.cpf === b.cpf;
+});
 </script>
