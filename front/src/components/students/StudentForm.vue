@@ -1,13 +1,13 @@
 <template>
     <v-form @submit.prevent="handleSubmit">
         <v-text-field class="mb-4" v-model="form.name" label="Nome" :error-messages="errors.name"
-            @blur="validateField('name')" />
+            @blur="validateField('name')" variant="underlined"/>
         <v-text-field class="mb-4" v-model="form.email" label="Email" :error-messages="errors.email"
-            @blur="validateField('email')" />
+            @blur="validateField('email')" variant="underlined"/>
         <v-text-field class="mb-4" v-model="form.ra" label="RA" :error-messages="errors.ra" @blur="validateField('ra')"
-            @input="form.ra = form.ra.toUpperCase()" />
+            @input="form.ra = form.ra.toUpperCase()" :readonly="isEdit" :variant="isEdit ? 'filled' : 'underlined'" />
         <v-text-field class="mb-1" v-model="form.cpf" label="CPF" ref="cpfRef" :error-messages="errors.cpf"
-            @blur="validateField('cpf')" />
+            @blur="validateField('cpf')" :readonly="isEdit" :variant="isEdit ? 'filled' : 'underlined'"  />
 
         <v-card-actions class="justify-end">
             <v-btn variant="outlined" :to="cancelUrl" color="grey-darken-1">Cancelar</v-btn>
@@ -21,7 +21,8 @@ import { reactive, watch, onMounted, ref, nextTick, computed } from 'vue';
 import { z, ZodError } from 'zod';
 import { MaskInput } from "maska";
 
-const cpfRef = ref()
+const cpfRef = ref();
+const isEdit = computed(() => !!props.originalData);
 
 const props = defineProps<{
     modelValue?: { name: string; email: string; ra: string; cpf: string }
