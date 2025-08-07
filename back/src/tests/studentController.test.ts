@@ -105,8 +105,7 @@ describe("Student Controller", () => {
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.json).toHaveBeenCalledWith({
                 error: expect.arrayContaining([
-                    expect.stringContaining("Formato de e-mail inválido"),
-                    expect.stringContaining("CPF deve conter exatamente 11 dígitos numéricos")
+                    expect.stringContaining("Formato de e-mail inválido")
                 ])
             });
         });

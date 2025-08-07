@@ -44,7 +44,9 @@ export const updateStudent = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Aluno não encontrado" });
     }
 
-    const parsedData = studentSchema.partial().parse(req.body);
+    const { ra: _ignoreRa, cpf: _ignoreCpf, ...allowedData } = req.body;
+
+    const parsedData = studentSchema.partial().parse(allowedData);
     await student.update(parsedData);
 
     return res.json(student);
