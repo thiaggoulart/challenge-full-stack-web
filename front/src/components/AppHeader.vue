@@ -7,9 +7,6 @@
       <v-btn to="/" variant="text" class="mx-2" prepend-icon="mdi-account-group">
         Alunos
       </v-btn>
-      <v-btn to="/students/new" class="ml-2" prepend-icon="mdi-account-plus">
-        Novo Aluno
-      </v-btn>
     </v-container>
   </v-app-bar>
 </template>
